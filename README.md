@@ -297,8 +297,6 @@ clinical-bert-api/
 │       └── cd.yml       # CD workflow
 ├── Dockerfile
 ├── requirements.txt
-├── pytest.ini          # Pytest configuration
-├── example_usage.py    # Example API usage script
 ├── deploy.sh
 ├── .dockerignore
 ├── .gitignore
@@ -312,14 +310,12 @@ clinical-bert-api/
 - **Docker Build:** ~2-5 minutes (includes model download and preloading)
 - **Batch Processing:** More efficient for multiple sentences
 
-## 🔧 Configuration
-
 ### Environment Variables
 
 - `TRANSFORMERS_CACHE`: Cache directory for transformers models (default: `/app/.cache`)
 - `PYTHONUNBUFFERED`: Set to 1 for real-time logging in containers
 
-### Cloud Run Settings
+ Cloud Run Settings
 
 - **Memory:** 2Gi (recommended for model loading)
 - **CPU:** 2 vCPU
@@ -327,7 +323,7 @@ clinical-bert-api/
 - **Max Instances:** 2 (adjust based on traffic in deploy.sh or cd.yml)
 - **Port:** 8000
 
-## 📝 Known Issues & Tradeoffs
+Known Issues & Tradeoffs
 
 1. **Cold Start:** First request after deployment may take longer due to model loading (~10-30s)
    - **Mitigation:** Model is preloaded in Docker image, so startup is faster. Use Cloud Run min instances > 0 to keep containers warm
@@ -343,7 +339,7 @@ clinical-bert-api/
    - **Mitigation:** Model is baked into the image, so no download needed at runtime
    - **Benefit:** Faster container startup since model is already cached
 
-## 🔐 Security Considerations
+Security Considerations
 
 - API is currently unauthenticated (for demo purposes)
 - For production, consider:
@@ -352,18 +348,6 @@ clinical-bert-api/
   - Using Cloud IAM for access control
   - Implementing rate limiting
 
-## 📄 License
 
-This project uses the `bvanaken/clinical-assertion-negation-bert` model from Hugging Face. Please review the model's license before commercial use.
 
-## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests and linting
-5. Submit a pull request
-
-## 📧 Support
-
-For issues or questions, please open an issue on GitHub.
