@@ -3,18 +3,38 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+from app.model import load_model
 
-client = TestClient(app)
+
+# Load model before tests to ensure it's available
+# TestClient should trigger lifespan, but we ensure it's loaded
+@pytest.fixture(scope="module", autouse=True)
+def ensure_model_loaded():
+    """Ensure model is loaded before running tests."""
+    try:
+        from app.model import is_model_loaded
+
+        if not is_model_loaded():
+            load_model()
+    except Exception:
+        # If model loading fails, try to load it
+        load_model()
 
 
-def test_root_endpoint():
+@pytest.fixture(scope="module")
+def client():
+    """Create a test client for the API."""
+    return TestClient(app)
+
+
+def test_root_endpoint(client):
     """Test root endpoint."""
     response = client.get("/")
     assert response.status_code == 200
     assert "message" in response.json()
 
 
-def test_health_endpoint():
+def test_health_endpoint(client):
     """Test health check endpoint."""
     response = client.get("/health")
     assert response.status_code == 200
@@ -23,7 +43,7 @@ def test_health_endpoint():
     assert "model_loaded" in data
 
 
-def test_predict_absent():
+def test_predict_absent(client):
     """Test prediction for ABSENT label."""
     response = client.post(
         "/predict", json={"sentence": "The patient denies chest pain."}
@@ -34,7 +54,7 @@ def test_predict_absent():
     assert 0.0 <= data["score"] <= 1.0
 
 
-def test_predict_present():
+def test_predict_present(client):
     """Test prediction for PRESENT label."""
     response = client.post(
         "/predict", json={"sentence": "He has a history of hypertension."}
@@ -45,7 +65,7 @@ def test_predict_present():
     assert 0.0 <= data["score"] <= 1.0
 
 
-def test_predict_conditional():
+def test_predict_conditional(client):
     """Test prediction for CONDITIONAL label."""
     response = client.post(
         "/predict",
@@ -57,7 +77,7 @@ def test_predict_conditional():
     assert 0.0 <= data["score"] <= 1.0
 
 
-def test_predict_absent_variant():
+def test_predict_absent_variant(client):
     """Test another ABSENT variant."""
     response = client.post(
         "/predict", json={"sentence": "No signs of pneumonia were observed."}
@@ -68,7 +88,7 @@ def test_predict_absent_variant():
     assert 0.0 <= data["score"] <= 1.0
 
 
-def test_predict_batch():
+def test_predict_batch(client):
     """Test batch prediction endpoint."""
     response = client.post(
         "/predict/batch",
@@ -90,14 +110,14 @@ def test_predict_batch():
         assert 0.0 <= pred["score"] <= 1.0
 
 
-def test_predict_invalid_input():
+def test_predict_invalid_input(client):
     """Test prediction with invalid input."""
     response = client.post("/predict", json={"sentence": ""})
     # Should return validation error
     assert response.status_code == 422
 
 
-def test_predict_missing_field():
+def test_predict_missing_field(client):
     """Test prediction with missing field."""
     response = client.post("/predict", json={})
     assert response.status_code == 422

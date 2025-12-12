@@ -16,7 +16,7 @@ class BatchPredictionRequest(BaseModel):
     """Request schema for batch predictions."""
 
     sentences: List[str] = Field(
-        ..., description="List of clinical sentences to classify", min_items=1
+        ..., description="List of clinical sentences to classify", min_length=1
     )
 
 
@@ -44,3 +44,6 @@ class HealthResponse(BaseModel):
 
     status: str = Field(..., description="Service status")
     model_loaded: bool = Field(..., description="Whether the model is loaded")
+
+    class Config:
+        protected_namespaces = ()
