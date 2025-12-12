@@ -45,5 +45,10 @@ jobs:
             --image ${{ env.DOCKER_IMAGE_URL }}:latest \
             --platform managed \
             --region us-central1 \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --memory 2Gi \
+            --cpu 2 \
+            --timeout 300 \
+            --port 8000 \
+            --set-env-vars TRANSFORMERS_CACHE=/app/.cache
 

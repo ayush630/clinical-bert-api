@@ -65,7 +65,8 @@ gcloud run deploy ${SERVICE_NAME} \
     --cpu 2 \
     --timeout 300 \
     --max-instances 2 \
-    --set-env-vars TRANSFORMERS_CACHE=/app/.cache
+    --set-env-vars TRANSFORMERS_CACHE=/app/.cache \
+    --port 8000
 
 echo "Deployment complete!"
 echo "Getting service URL..."
