@@ -1,14 +1,14 @@
-# Clinical Assertion Negation BERT API
+Clinical Assertion Negation BERT API
 
 A real-time inference API for clinical text classification using the Hugging Face model `bvanaken/clinical-assertion-negation-bert`. This API classifies clinical sentences with assertion status labels (PRESENT, ABSENT, CONDITIONAL) and confidence scores.
 
-## 📋 Project Overview
+Project Overview
 
 Healthcare systems often contain unstructured clinical notes. Understanding the assertion status of medical concepts in text is critical for downstream analytics and diagnostics. This API provides a production-ready service to classify clinical sentences in real-time.
 
-### Features
+# Features
 
-- **FastAPI-based REST API** with OpenAPI documentation
+- **FastAPI-based REST API** with documentation
 - **Model caching** - Model loaded once at startup for optimal performance
 - **Single and batch prediction** endpoints
 - **Health check endpoint** for monitoring
@@ -16,15 +16,15 @@ Healthcare systems often contain unstructured clinical notes. Understanding the 
 - **CI/CD pipeline** with GitHub Actions
 - **Cloud Run deployment** ready
 
-## 🚀 Quick Start
+Quick Start
 
-### Prerequisites
+#Prerequisites
 
 - Python 3.12+
 - Docker (for containerized deployment)
 - Google Cloud SDK (for GCP deployment)
 
-### Local Development
+#Local Development
 
 1. **Clone the repository**
    ```bash
@@ -52,19 +52,21 @@ Healthcare systems often contain unstructured clinical notes. Understanding the 
    - API docs: `http://localhost:8000/docs`
    - Health check: `http://localhost:8000/health`
 
-### Using Docker
+#Using Docker
 
 1. **Build the Docker image**
    ```bash
    docker build -t clinical-bert-api .
    ```
+   
+   **Note:** The Docker build will preload the model (~500MB download, takes 2-5 minutes). This ensures faster container startup.
 
 2. **Run the container**
    ```bash
    docker run -p 8000:8000 clinical-bert-api
    ```
 
-## 📡 API Usage
+#API Usage
 
 ### Single Prediction
 
@@ -121,7 +123,7 @@ print(result)
 # }
 ```
 
-### Health Check
+#Health Check
 
 **Endpoint:** `GET /health`
 
@@ -133,13 +135,7 @@ print(response.json())
 # Output: {"status": "healthy", "model_loaded": true}
 ```
 
-## ☁️ Cloud Deployment (Google Cloud Platform)
-
-### Prerequisites
-
-1. Google Cloud account with billing enabled (free tier: $300 credits)
-2. Google Cloud SDK installed and configured
-3. Docker installed
+#Cloud Deployment (Google Cloud Platform)
 
 ### Setup Steps
 
@@ -187,7 +183,9 @@ print(response.json())
        --memory 2Gi \
        --cpu 2 \
        --timeout 300 \
-       --max-instances 10
+       --max-instances 2 \
+       --port 8000 \
+       --set-env-vars TRANSFORMERS_CACHE=/app/.cache
    ```
 
 ### CI/CD Deployment
@@ -250,17 +248,11 @@ The project includes GitHub Actions workflows for automated CI/CD:
        - Tag creation (tags starting with `v*`, e.g., `v1.0.0`) - enables version-based deployments
      - **Steps:**
        - Authenticates with GCP using service account
-       - Builds Docker image
+       - Builds Docker image (includes model preloading)
        - Pushes to Artifact Registry (`dev-bert-api` repository)
-       - Deploys to Cloud Run with default settings (public access enabled)
+       - Deploys to Cloud Run with configured settings (2Gi memory, 2 CPU, 300s timeout, port 8000, public access enabled)
      
-   **Note:** The CD workflow uses Cloud Run default resource settings. To customize memory, CPU, timeout, or max instances, add these flags to the `gcloud run deploy` command in `cd.yml`:
-   ```bash
-   --memory 2Gi \
-   --cpu 2 \
-   --timeout 300 \
-   --max-instances 10
-   ```
+   **Note:** The CD workflow is configured with specific resource settings (2Gi memory, 2 CPU, 300s timeout, port 8000). To modify these, update the flags in the `gcloud run deploy` command in `cd.yml`.
 
 ## 🧪 Testing
 
@@ -298,7 +290,6 @@ clinical-bert-api/
 │   ├── model.py         # Model loading & prediction logic
 │   └── schemas.py       # Pydantic schemas
 ├── tests/
-│   ├── __init__.py
 │   └── test_api.py      # Unit tests
 ├── .github/
 │   └── workflows/
@@ -306,6 +297,8 @@ clinical-bert-api/
 │       └── cd.yml       # CD workflow
 ├── Dockerfile
 ├── requirements.txt
+├── pytest.ini          # Pytest configuration
+├── example_usage.py    # Example API usage script
 ├── deploy.sh
 ├── .dockerignore
 ├── .gitignore
@@ -315,7 +308,8 @@ clinical-bert-api/
 ## ⚡ Performance
 
 - **API Response Time:** < 500ms for short clinical sentences (on CPU)
-- **Model Loading:** ~10-30 seconds on first startup (cached thereafter)
+- **Model Loading:** ~10-30 seconds on container startup (model is preloaded in Docker image)
+- **Docker Build:** ~2-5 minutes (includes model download and preloading)
 - **Batch Processing:** More efficient for multiple sentences
 
 ## 🔧 Configuration
@@ -330,12 +324,13 @@ clinical-bert-api/
 - **Memory:** 2Gi (recommended for model loading)
 - **CPU:** 2 vCPU
 - **Timeout:** 300 seconds
-- **Max Instances:** 10 (adjust based on traffic)
+- **Max Instances:** 2 (adjust based on traffic in deploy.sh or cd.yml)
+- **Port:** 8000
 
 ## 📝 Known Issues & Tradeoffs
 
 1. **Cold Start:** First request after deployment may take longer due to model loading (~10-30s)
-   - **Mitigation:** Use Cloud Run min instances > 0 to keep containers warm
+   - **Mitigation:** Model is preloaded in Docker image, so startup is faster. Use Cloud Run min instances > 0 to keep containers warm
 
 2. **Memory Requirements:** Model requires ~1.5GB RAM
    - **Mitigation:** Cloud Run configured with 2Gi memory
@@ -344,8 +339,9 @@ clinical-bert-api/
    - **Tradeoff:** Slightly slower inference but no GPU costs
    - **Future:** Can enable GPU for faster inference if needed
 
-4. **Model Download:** First deployment downloads model from Hugging Face (~500MB)
-   - **Mitigation:** Model is cached in container filesystem
+4. **Docker Build Time:** Model download and preloading during build takes 2-5 minutes (~500MB)
+   - **Mitigation:** Model is baked into the image, so no download needed at runtime
+   - **Benefit:** Faster container startup since model is already cached
 
 ## 🔐 Security Considerations
 
